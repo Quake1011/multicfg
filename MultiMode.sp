@@ -1,7 +1,5 @@
 #include <sourcemod>
 
-int gModes;
-
 Database gDatabase;
 
 KeyValues kv;
@@ -53,7 +51,7 @@ public void OnMapStart()
         kv.GotoFirstSubKey();
         kv.JumpToKey("maps");
         kv.GotoFirstSubKey();
-        char section[MAX_NAME_LENGTH];
+        char section[128];
         do {
             kv.GetSectionName(section, sizeof(section));
             if(strcmp(map, section, true))
@@ -107,8 +105,7 @@ public Action CommandMultiMode(int client, int args)
     hMenu.SetTitle("MultiMode");
     do {
         kv.GetSectionName(mode, sizeof(mode));
-        hMenu.AddItem(mode, mode);
-        gModes++;    
+        hMenu.AddItem(mode, mode);  
     } while(kv.GotoNextKey());
     hMenu.ExitBackButton = true;
     hMenu.ExitButton = true;
@@ -161,11 +158,14 @@ public int MapsMenu(Menu menu, MenuAction action, int client, int item)
             ServerCommand(sQuery);
             Format(sQuery, sizeof(sQuery), "SELECT * FROM `multimode` WHERE `active`='1' OR `active`='0'");
             DBResultSet result = SQL_Query(gDatabase, sQuery);
-            if(result != INVALID_HANDLE && result.HasResults) count = result.RowCount;
+            if(result != INVALID_HANDLE && result.HasResults) 
+			{
+				count = result.RowCount;            
+				if(count == 0) Format(sQuery, sizeof(sQuery), "INSERT INTO `multimode` (`active`) VALUES ('1')");
+				else if(count == 1) Format(sQuery, sizeof(sQuery), "UPDATE `multimode` SET `active`='1' WHERE `active`='0'");
+				SQL_Query(gDatabase, sQuery);
+			}
             delete result;
-            if(count == 0) Format(sQuery, sizeof(sQuery), "INSERT INTO `multimode` (`active`) VALUES ('1')");
-            else if(count == 1) Format(sQuery, sizeof(sQuery), "UPDATE `multimode` SET `active`='1' WHERE `active`='0'");
-            SQL_Query(gDatabase, sQuery);
         }
         case MenuAction_End: delete menu;
     }
