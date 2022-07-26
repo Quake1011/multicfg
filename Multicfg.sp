@@ -101,6 +101,7 @@ public Action CommandMultiMode(int client, int args)
     char mode[64]
     kv.Rewind();
     kv.GotoFirstSubKey();
+    kv.GotoFirstSubKey();
     Menu hMenu = CreateMenu(MainMenuMulti);
     hMenu.SetTitle("MultiMode");
     do {
