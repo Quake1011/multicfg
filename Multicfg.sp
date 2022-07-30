@@ -4,6 +4,15 @@ Database gDatabase;
 
 KeyValues kv;
 
+public Plugin myinfo = 
+{
+    name = "Multi CFG",
+    author = "Quake1011",
+    description = "Mode selector by menu",
+    version = "0.1",
+    url = "https://github.com/Quake1011/"
+}
+
 public void OnPluginStart()
 {
     if(!SQL_CheckConfig("multicfg"))
