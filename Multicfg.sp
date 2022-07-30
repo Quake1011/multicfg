@@ -6,13 +6,17 @@ KeyValues kv;
 
 public void OnPluginStart()
 {
-    SQL_CheckConfig("MultiMode");
+    if(!SQL_CheckConfig("multicfg"))
+    {
+        SetFailState("Not found section \"multicfg\" in databases.cfg");
+        return;
+    }
 
     char buffer[PLATFORM_MAX_PATH];
     BuildPath(Path_SM, buffer, sizeof(buffer), "configs/multimode.ini");
     kv = CreateKeyValues("Settings");
     kv.ImportFromFile(buffer);
-    Database.Connect(SQLCallBack, "MultiMode");
+    Database.Connect(SQLCallBack, "multicfg");
     RegConsoleCmd("sm_multi", CommandMultiMode);
 }
 
