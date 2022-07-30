@@ -111,7 +111,7 @@ public Action LoadConfig(Handle hTimer)
             } while(kv.GotoNextKey())
         }
 
-        Format(sQuery, sizeof(sQuery), "UPDATE `multimode` SET `active`='0' `mode`='%s'", ActiveMode);
+        Format(sQuery, sizeof(sQuery), "UPDATE `multimode` SET `active`='0' WHERE `mode`='%s'", ActiveMode);
         SQL_Query(gDatabase, sQuery);
     }
     delete result
