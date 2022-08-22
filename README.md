@@ -36,3 +36,4 @@
 - Quake#2601 - DISCORD
 - [HLMOD](https://hlmod.ru/members/palonez.92448/)
 - [STEAM](https://steamcommunity.com/id/comecamecame/)
+- [VK](https://vk.com/bgtroll/)
