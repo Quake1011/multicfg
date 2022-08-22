@@ -22,15 +22,12 @@
 5) Restart a server
 ## Commands 
 - **sm_multi** - Select mode and map for **(ROOT)**
-
-# Project Name
-Project Description
-
+- 
 ## TODO:
+- [x] BackCounter  
 - [ ] Voting
 - [ ] Advanced settings by cfg
 - [ ] MultiLang
-- [x] BackCounter  
 
 ## Thanks
 - [Trekken](https://hlmod.ru/members/trekken.132185/) (tests & ideas)
