@@ -17,7 +17,7 @@
   "pass"	"password"
 }
 ```
-3) To configure **multimode.ini** for yourself in the source code before compilation or after file generation
+3) To configure **multimode.ini** for yourself
 4) Compile **Multicfg.sp** and move it to the **plugins** folder
 5) Restart a server
 ## Commands 
