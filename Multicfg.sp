@@ -11,7 +11,7 @@ public Plugin myinfo =
     name = "Multi CFG",
     author = "Quake1011",
     description = "Mode selector by menu",
-    version = "0.1",
+    version = "0.35",
     url = "https://github.com/Quake1011/"
 }
 
