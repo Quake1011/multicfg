@@ -22,7 +22,7 @@
 5) Restart a server
 ## Commands 
 - **sm_multi** - Select mode and map for **(ROOT)**
-- 
+
 ## TODO:
 - [x] BackCounter  
 - [ ] Voting
