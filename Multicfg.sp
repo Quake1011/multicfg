@@ -1,9 +1,11 @@
+#pragma tabsize 0
 #include <sourcemod>
 
 Database gDatabase;
 
 KeyValues kv;
-
+int gcounter = 30;
+Handle repeater;
 public Plugin myinfo = 
 {
     name = "Multi CFG",
@@ -210,17 +212,50 @@ public int MapsMenu(Menu menu, MenuAction action, int client, int item)
         }        
         case MenuAction_Select:
         {
-            char info[2][64], sQuery[256];
+            char info[2][64], sQuery[256], cmd[256];
             int istyle;
             char map[256];
             menu.GetTitle(map, sizeof(map));
             menu.GetItem(item, info[0], 64, istyle, info[1], 64);
-            Format(sQuery, sizeof(sQuery), "map %s", info[0]);
-            ServerCommand(sQuery);
-
+            Format(cmd, sizeof(cmd), "map %s", info[0]);
 			Format(sQuery, sizeof(sQuery), "UPDATE `multimode` SET `active`='1' WHERE `mode`='%s'", map);
-			SQL_Query(gDatabase, sQuery);
+			DataPack dp = CreateDataPack();
+			CreateTimer(30.0, Execution, dp);
+			repeater = CreateTimer(1.0, Advert, _, TIMER_REPEAT);
+			dp.WriteString(cmd);
+			dp.WriteString(sQuery);
         }
     }
     return 0;
+}
+
+public Action Advert(Handle hTimer)
+{
+    if(gcounter == 30) PrintCenterTextAll("Режим сменится через: %i секунд", gcounter);
+    else if(gcounter == 20) PrintCenterTextAll("Режим сменится через: %i секунд", gcounter);
+    else if(gcounter == 10) PrintCenterTextAll("Режим сменится через: %i секунд", gcounter);
+    else if(gcounter < 10) PrintCenterTextAll("Режим сменится через: %i секунд", gcounter);
+    gcounter = gcounter - 1;
+}
+
+public Action Execution(Handle hTimer, any dp)
+{
+    gcounter = 30;
+    char sQuery[256], cmd[256];
+    DataPack hPack = view_as<DataPack>(dp);
+    hPack.Reset();
+    hPack.ReadString(cmd, sizeof(cmd));
+    hPack.ReadString(sQuery, sizeof(sQuery));
+    delete hPack;
+    SQL_Query(gDatabase, sQuery);
+    ServerCommand(cmd);
+}
+
+public void OnMapStart()
+{
+  if(repeater != INVALID_HANDLE)
+    {
+        KillTimer(repeater);
+        repeater = null;
+    }
 }
