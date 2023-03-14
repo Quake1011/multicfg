@@ -10,24 +10,26 @@ public Plugin myinfo =
 	name = "Multi CFG",
 	author = "Quake1011",
 	description = "Mode selector by menu",
-	version = "0.4",
+	version = "0.5",
 	url = "https://github.com/Quake1011/"
 }
 
 public void OnPluginStart()
 {
+	
 	if(!SQL_CheckConfig("multicfg"))
 	{
 		SetFailState("Not found section \"multicfg\" in databases.cfg");
 		return;
 	}
-	
+
+	char sBuffer[PLATFORM_MAX_PATH];
 	gcounter = 30;
 	
-	char sBuffer[PLATFORM_MAX_PATH];
 	BuildPath(Path_SM, sBuffer, sizeof(sBuffer), "configs/multimode.ini");
 	kv = CreateKeyValues("Settings");
-	if(kv.ImportFromFile(sBuffer)) return;
+
+	if(!kv.ImportFromFile(sBuffer)) return;
 	
 	Database.Connect(SQLCallBack, "multicfg");
 	
@@ -56,7 +58,7 @@ public void SQLCallBack(Database db, const char[] error, any data)
 			kv.GetSectionName(ModeInDb, sizeof(ModeInDb));
 			SQL_FormatQuery(gDatabase, sQuery, sizeof(sQuery), "INSERT INTO `multimode` (`active`, `mode`) VALUES ('0', '%s')", ModeInDb);
 			SQL_FastQuery(gDatabase, sQuery);
-		} while(kv.GotoNextKey())	
+		} while(kv.GotoNextKey());
 	}
 }
 
@@ -74,7 +76,7 @@ public Action LoadConfig(Handle hTimer)
 	
 	if(result == INVALID_HANDLE || !result.HasResults)
 	{
-		SetFailState("can`t select from database OnConfigExec");
+		SetFailState("Can`t select from database OnConfigExec");
 		delete result;
 	}
 	
@@ -87,53 +89,49 @@ public Action LoadConfig(Handle hTimer)
 		GetCurrentMap(map, sizeof(map));
 		
 		kv.Rewind();
-		if(kv.JumpToKey(ActiveMode))
+		if(kv.JumpToKey(ActiveMode) && kv.GotoFirstSubKey())
 		{
-			if(kv.GotoFirstSubKey())
+			do
 			{
-				do
+				kv.GetSectionName(section, sizeof(section));
+				if(StrEqual("variables", section, false))
 				{
-					kv.GetSectionName(section, sizeof(section));
-					if(StrEqual("variables", section, false))
+					for(int i = 0; i <= 1024; i++)
 					{
-						for(int i = 0; i <= 1024; i++)
-						{
-							char temp[8];
-							IntToString(i, temp, sizeof(temp));
-							kv.GetString(temp, section, sizeof(section));
-							if(section[0] != '\0') ServerCommand(section);
-							else break;
-						}
+						char temp[8];
+						IntToString(i, temp, sizeof(temp));
+						kv.GetString(temp, section, sizeof(section));
+						if(section[0] != '\0') ServerCommand(section);
+						else break;
 					}
-					if(StrEqual("unload", section, false))
+				}
+				if(StrEqual("unload", section, false))
+				{
+					for(int i = 0; i <= 1024; i++)
 					{
-						for(int i = 0; i <= 1024; i++)
-						{
-							char temp[8];
-							IntToString(i, temp, sizeof(temp));
-							kv.GetString(temp, section, sizeof(section));
-							if(section[0] != '\0') ServerCommand("sm plugins unload %s", section);
-							else break;
-						}
+						char temp[8];
+						IntToString(i, temp, sizeof(temp));
+						kv.GetString(temp, section, sizeof(section));
+						if(section[0] != '\0') ServerCommand("sm plugins unload %s", section);
+						else break;
 					}
-					if(StrEqual("configs", section, false))
+				}
+				if(StrEqual("configs", section, false))
+				{
+					for(int i = 0; i <= 1024; i++)
 					{
-						for(int i = 0; i <= 1024; i++)
-						{
-							char temp[8];
-							IntToString(i, temp, sizeof(temp));
-							kv.GetString(temp, section, sizeof(section));
-							if(section[0] != '\0') ServerCommand("exec %s", section);
-							else break;
-						}
+						char temp[8];
+						IntToString(i, temp, sizeof(temp));
+						kv.GetString(temp, section, sizeof(section));
+						if(section[0] != '\0') ServerCommand("exec %s", section);
+						else break;
 					}
-				} while(kv.GotoNextKey())			
-			}
+				}
+			} while(kv.GotoNextKey());			
 		}
 	
 		SQL_FormatQuery(gDatabase, sQuery, sizeof(sQuery), "UPDATE `multimode` SET `active`='0' WHERE `mode`='%s'", ActiveMode);
 		SQL_FastQuery(gDatabase, sQuery);
-		delete result;
 	}
 	
 	return Plugin_Continue;
@@ -164,13 +162,13 @@ public int MainMenuMulti(Menu menu, MenuAction action, int client, int item)
 {
 	switch(action)
 	{
+		case MenuAction_End: delete menu;
 		case MenuAction_Select:
 		{
-			char info[2][64];
-			menu.GetItem(item, info[0], sizeof(info[]), _, info[1], sizeof(info[]));
-			LookAtMaps(info[0], client);
+			char info[64];
+			menu.GetItem(item, info, sizeof(info));
+			LookAtMaps(info, client);
 		}
-		case MenuAction_End: delete menu;
 	}
 	return 0;
 }
@@ -179,25 +177,22 @@ public void LookAtMaps(char[] ModeName, int client)
 {
 	char section[MAX_NAME_LENGTH];
 	kv.Rewind();
-	if(kv.JumpToKey(ModeName))
+	if(kv.JumpToKey(ModeName) && kv.JumpToKey("maps"))
 	{
-		if(kv.JumpToKey("maps"))
+		Menu hMenu = CreateMenu(MapsMenu);
+		hMenu.SetTitle(ModeName);
+		for(int i = 0; i <= 64; i++)
 		{
-			Menu hMenu = CreateMenu(MapsMenu);
-			hMenu.SetTitle(ModeName);
-			for(int i = 0; i <= 64; i++)
-			{
-				char map[8];
-				IntToString(i, map, sizeof(map));
-				kv.GetString(map, section, sizeof(section));
-				if(section[0] != '\0') hMenu.AddItem(section, section);
-				else break;
-			}
-	
-			hMenu.ExitBackButton = true;
-			hMenu.ExitButton = true;
-			hMenu.Display(client, 0);			
+			char map[8];
+			IntToString(i, map, sizeof(map));
+			kv.GetString(map, section, sizeof(section));
+			if(section[0] != '\0') hMenu.AddItem(section, section);
+			else break;
 		}
+
+		hMenu.ExitBackButton = true;
+		hMenu.ExitButton = true;
+		hMenu.Display(client, 0);			
 	}
 }
 
@@ -225,20 +220,20 @@ public int MapsMenu(Menu menu, MenuAction action, int client, int item)
 		}        
 		case MenuAction_Select:
 		{
-			char info[2][64], sQuery[256], cmd[256], map[256];
+			char info[64], sQuery[256], map[256];
 			
 			menu.GetTitle(map, sizeof(map));
-			menu.GetItem(item, info[0], sizeof(info[]), _, info[1], sizeof(info[]));
+			menu.GetItem(item, info, sizeof(info));
 			
-			Format(cmd, sizeof(cmd), "map %s", info[0]);
+			Format(info, sizeof(info), "map %s", info);
 			SQL_FormatQuery(gDatabase, sQuery, sizeof(sQuery), "UPDATE `multimode` SET `active`='1' WHERE `mode`='%s'", map);
 			
 			DataPack dp = CreateDataPack();
 			
 			CreateTimer(30.0, Execution, dp);
-			repeater = CreateTimer(1.0, Advert, _, TIMER_REPEAT);
+			repeater = CreateTimer(1.0, Advert, TIMER_REPEAT);
 			
-			dp.WriteString(cmd);
+			dp.WriteString(info);
 			dp.WriteString(sQuery);
 		}
 	}
@@ -247,11 +242,8 @@ public int MapsMenu(Menu menu, MenuAction action, int client, int item)
 
 public Action Advert(Handle hTimer)
 {
-	if(gcounter == 30) PrintCenterTextAll("Режим сменится через: %i секунд", gcounter);
-	else if(gcounter == 20) PrintCenterTextAll("Режим сменится через: %i секунд", gcounter);
-	else if(gcounter == 10) PrintCenterTextAll("Режим сменится через: %i секунд", gcounter);
-	else if(gcounter < 10) PrintCenterTextAll("Режим сменится через: %i секунд", gcounter);
-	gcounter = gcounter - 1;
+	if(gcounter == 30 || gcounter == 20 || gcounter == 10 || gcounter < 10) PrintCenterTextAll("Режим сменится через: %i секунд", gcounter);
+	gcounter = --gcounter;
 	
 	return Plugin_Continue;
 }
@@ -265,16 +257,15 @@ public Action Execution(Handle hTimer, any dp)
 	hPack.Reset();
 	hPack.ReadString(cmd, sizeof(cmd));
 	hPack.ReadString(sQuery, sizeof(sQuery));
-	
+	delete hPack;
+
 	SQL_FastQuery(gDatabase, sQuery);
 	ServerCommand(cmd);
-	
-	delete hPack;
 	
 	return Plugin_Continue;
 }
 
-public void OnMapStart()
+public void OnMapEnd()
 {
 	if(repeater != INVALID_HANDLE)
 	{
